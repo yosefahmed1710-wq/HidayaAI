@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #D4AF37;
+  --color-gold-light: #FBF7E9;
+  --color-gold-dark: #B8860B;
+  --color-gold-muted: #E5D5A1;
+  
+  /* Light Theme: White, Gold, Black */
+  --color-light-bg: #FFFFFF;
+  --color-light-text: #1A1A1A;
+  --color-light-accent: #D4AF37;
+
+  /* Dark Theme: Black, Gold, Brown */
+  --color-dark-bg: #0A0A0A;
+  --color-dark-text: #E5D5A1;
+  --color-dark-accent: #3E2723;
+}
+
+@layer base {
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --accent: #D4AF37;
+    --card: #FBF7E9;
+    --sidebar: #F5F5F5;
+    --border: #E5D5A1;
+  }
+
+  .dark {
+    --bg: #0A0A0A;
+    --text: #E5D5A1;
+    --accent: #B8860B;
+    --card: #1B110F;
+    --sidebar: #121212;
+    --border: #3E2723;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+.markdown-body b, .markdown-body strong {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.markdown-body p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.islamic-pattern {
+  background-image: url("https://www.transparenttextures.com/patterns/arabesque.png");
+  opacity: 0.03;
+}
+
+.dark .islamic-pattern {
+  opacity: 0.08;
+  filter: invert(1);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  opacity: 1;
+}

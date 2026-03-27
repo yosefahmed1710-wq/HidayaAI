@@ -1,0 +1,7 @@
+{
+  "name": "Remix: Hidaya AI",
+  "description": "An AI assistant for Islamic studies, providing answers strictly from the Quran and Sunnah with authorized resources.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

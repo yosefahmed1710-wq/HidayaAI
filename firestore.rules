@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, email, displayName, photoURL, createdAt, subscriptionTier, dailyQuestionCount, lastQuestionReset, stripeCustomerId, stripeSubscriptionId
+    //
+    // Collection: chats
+    // Fields: id, userId, title, createdAt, updatedAt
+    //
+    // Collection: messages (subcollection of chats)
+    // Fields: id, chatId, role, text, timestamp
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "yosef.elsaid.10@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isChatOwner(chatId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
+    }
+
+    function isChatPublic(chatId) {
+      return get(/databases/$(database)/documents/chats/$(chatId)).data.isPublic == true;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid == request.auth.uid &&
+             data.email is string &&
+             data.email.size() < 256 &&
+             (!('displayName' in data) || data.displayName is string || data.displayName == null) &&
+             (!('photoURL' in data) || data.photoURL is string || data.photoURL == null) &&
+             (!('subscriptionTier' in data) || data.subscriptionTier in ['free', 'scholar', 'scholar_gold']) &&
+             (!('dailyQuestionCount' in data) || data.dailyQuestionCount is int) &&
+             (!('role' in data) || data.role in ['user', 'admin']);
+    }
+
+    function isValidChat(data) {
+      return data.keys().hasAll(['userId', 'title', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['chatId', 'role', 'text', 'timestamp']) &&
+             data.role in ['user', 'model'] &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 50000 &&
+             (!('summary' in data) || data.summary is string) &&
+             (!('mood' in data) || data.mood is string) &&
+             (!('correctedPrompt' in data) || data.correctedPrompt is string || data.correctedPrompt == null) &&
+             (!('visual' in data) || data.visual is string) &&
+             (!('video' in data) || data.video is string) &&
+             (!('references' in data) || data.references is list) &&
+             (!('wordAnalysis' in data) || data.wordAnalysis is list) &&
+             (!('relatedQuestions' in data) || data.relatedQuestions is list) &&
+             (!('attachments' in data) || data.attachments is list) &&
+             (!('links' in data) || data.links is list);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['subscriptionTier', 'stripeCustomerId', 'stripeSubscriptionId', 'role']))) || 
+                      isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || resource.data.isPublic == true || isAdmin();
+      allow create: if isAuthenticated() && isValidChat(request.resource.data);
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid && isValidChat(request.resource.data)) || isAdmin();
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isChatOwner(chatId) || isChatPublic(chatId) || isAdmin();
+        allow create: if isChatOwner(chatId) && isValidMessage(request.resource.data);
+      }
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}
